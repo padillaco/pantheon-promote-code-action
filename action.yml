@@ -1,0 +1,57 @@
+name: 'Pantheon Promote Code'
+description: 'Promote code from one environment to another on Pantheon using Terminus.'
+author: 'padillaco'
+branding:
+  icon: 'cloud-lightning'
+  color: 'blue'
+inputs:
+  pantheon_site:
+    description: 'Name of Pantheon site to deploy to.'
+    required: true
+  pantheon_machine_token:
+    description: 'Pantheon machine token to use.'
+    required: true
+  terminus_version:
+    description: 'Version of terminus to use.'
+    default: '3.3.0'
+runs:
+  using: 'composite'
+  if: ${{ github.event.pull_request.merged && ((startsWith(github.event.pull_request.head.ref_name, 'multidev/') && github.event.pull_request.base.ref_name == 'develop') || (github.event.pull_request.head.ref_name == 'develop' && github.event.pull_request.base.ref_name == 'staging') || (github.event.pull_request.head.ref_name == 'staging' && github.event.pull_request.base.ref_name == 'main')) }}
+  steps:
+    - name: Set Output Variables - Pantheon Environment From/To
+      shell: bash
+      id: pantheon-env
+      run: |
+        if [[ "$(echo ${github.event.pull_request.head.ref_name})" == "multidev/*" && "$(echo ${github.event.pull_request.base.ref_name})" == "develop" ]]; then
+          echo "pantheon_env_from=$(echo ${github.event.pull_request.head.ref_name} | cut -d '/' -f2)" >> $GITHUB_OUTPUT
+          echo "pantheon_env_to=dev" >> $GITHUB_OUTPUT
+        elif [[ "$(echo ${github.event.pull_request.head.ref_name})" == "develop" && "$(echo ${github.event.pull_request.base.ref_name})" == "staging" ]]; then
+          echo "pantheon_env_from=dev" >> $GITHUB_OUTPUT
+          echo "pantheon_env_to=test" >> $GITHUB_OUTPUT
+        elif [[ "$(echo ${github.event.pull_request.head.ref_name})" == "staging" && "$(echo ${github.event.pull_request.base.ref_name})" == "main" ]]; then
+          echo "pantheon_env_from=test" >> $GITHUB_OUTPUT
+          echo "pantheon_env_to=live" >> $GITHUB_OUTPUT
+        else
+          echo "Invalid branch detection for Pantheon code promotion."
+          exit 1
+        fi
+    - name: Install terminus
+      shell: bash
+      run: |
+        mkdir -p /tmp/terminus && cd /tmp/terminus
+        curl -L "https://github.com/pantheon-systems/terminus/releases/download/${{ inputs.terminus_version }}/terminus.phar" --output terminus
+        chmod +x terminus
+        sudo mv terminus /usr/local/bin/terminus
+    - name: Authenticate with Terminus
+      shell: bash
+      run: terminus auth:login --machine-token=${{ inputs.pantheon_machine_token }}
+    - name: Pantheon Promote Code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}
+      shell: bash
+      run: |
+        echo "Promoting code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
+
+        if [[ "$(echo ${github.event.pull_request.head.ref_name})" == "multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
+          multidev:merge-to-dev ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_from }}
+        else
+          terminus env:deploy ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_to }} --note="$(git log -1 --pretty=%B)"
+        fi
