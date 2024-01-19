@@ -21,8 +21,8 @@ runs:
       shell: bash
       id: pantheon-env
       run: |
-        if [[ "$(echo ${GITHUB_HEAD_REF})" == "multidev/*" && "$(echo ${GITHUB_BASE_REF})" == "develop" ]]; then
-          echo "pantheon_env_from=$(echo ${GITHUB_HEAD_REF} | cut -d '/' -f2)" >> $GITHUB_OUTPUT
+        if [[ "$(echo ${GITHUB_HEAD_REF})" == feature/multidev/* && "$(echo ${GITHUB_BASE_REF})" == "develop" ]]; then
+          echo "pantheon_env_from=$(echo ${GITHUB_HEAD_REF} | cut -d '/' -f3)" >> $GITHUB_OUTPUT
           echo "pantheon_env_to=dev" >> $GITHUB_OUTPUT
         elif [[ "$(echo ${GITHUB_HEAD_REF})" == "develop" && "$(echo ${GITHUB_BASE_REF})" == "staging" ]]; then
           echo "pantheon_env_from=dev" >> $GITHUB_OUTPUT
