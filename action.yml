@@ -16,7 +16,6 @@ inputs:
     default: '3.3.0'
 runs:
   using: 'composite'
-  if: github.event.pull_request.merged && ((startsWith(github.event.pull_request.head.ref_name, 'multidev/') && github.event.pull_request.base.ref_name == 'develop') || (github.event.pull_request.head.ref_name == 'develop' && github.event.pull_request.base.ref_name == 'staging') || (github.event.pull_request.head.ref_name == 'staging' && github.event.pull_request.base.ref_name == 'main'))
   steps:
     - name: Set Output Variables - Pantheon Environment From/To
       shell: bash
