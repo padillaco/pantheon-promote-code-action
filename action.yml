@@ -21,13 +21,13 @@ runs:
       shell: bash
       id: pantheon-env
       run: |
-        if [[ "$(echo ${github.event.pull_request.head.ref_name})" == "multidev/*" && "$(echo ${github.event.pull_request.base.ref_name})" == "develop" ]]; then
-          echo "pantheon_env_from=$(echo ${github.event.pull_request.head.ref_name} | cut -d '/' -f2)" >> $GITHUB_OUTPUT
+        if [[ "$(echo ${GITHUB_HEAD_REF})" == "multidev/*" && "$(echo ${GITHUB_BASE_REF})" == "develop" ]]; then
+          echo "pantheon_env_from=$(echo ${GITHUB_HEAD_REF} | cut -d '/' -f2)" >> $GITHUB_OUTPUT
           echo "pantheon_env_to=dev" >> $GITHUB_OUTPUT
-        elif [[ "$(echo ${github.event.pull_request.head.ref_name})" == "develop" && "$(echo ${github.event.pull_request.base.ref_name})" == "staging" ]]; then
+        elif [[ "$(echo ${GITHUB_HEAD_REF})" == "develop" && "$(echo ${GITHUB_BASE_REF})" == "staging" ]]; then
           echo "pantheon_env_from=dev" >> $GITHUB_OUTPUT
           echo "pantheon_env_to=test" >> $GITHUB_OUTPUT
-        elif [[ "$(echo ${github.event.pull_request.head.ref_name})" == "staging" && "$(echo ${github.event.pull_request.base.ref_name})" == "main" ]]; then
+        elif [[ "$(echo ${GITHUB_HEAD_REF})" == "staging" && "$(echo ${GITHUB_BASE_REF})" == "main" ]]; then
           echo "pantheon_env_from=test" >> $GITHUB_OUTPUT
           echo "pantheon_env_to=live" >> $GITHUB_OUTPUT
         else
@@ -49,7 +49,7 @@ runs:
       run: |
         echo "Promoting code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
 
-        if [[ "$(echo ${github.event.pull_request.head.ref_name})" == "multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
+        if [[ "$(echo ${GITHUB_HEAD_REF})" == "multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
           multidev:merge-to-dev ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_from }}
         else
           terminus env:deploy ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_to }} --note="$(git log -1 --pretty=%B)"
