@@ -1,23 +1,20 @@
 name: 'Pantheon Promote Code'
-description: 'Promote code from one environment to another on Pantheon using Terminus.'
+description: 'Deploys code from one environment to another on Pantheon using Terminus.'
 author: 'padillaco'
 branding:
   icon: 'cloud-lightning'
   color: 'blue'
 inputs:
-  pantheon_site:
-    description: 'Name of Pantheon site to deploy to.'
+  pantheon_site_slug:
+    description: 'The slug name of the Pantheon site to deploy to.'
     required: true
   pantheon_machine_token:
     description: 'Pantheon machine token to use.'
     required: true
-  terminus_version:
-    description: 'Version of terminus to use.'
-    default: '3.3.0'
 runs:
   using: 'composite'
   steps:
-    - name: Set Output Variables - Pantheon Environment From/To
+    - name: Set Pantheon Environment Variables
       shell: bash
       id: pantheon-env
       run: |
@@ -34,23 +31,26 @@ runs:
           echo "Invalid branch detection for Pantheon code promotion."
           exit 1
         fi
-    - name: Install terminus
+    
+    - name: Install Terminus
       shell: bash
       run: |
         mkdir -p /tmp/terminus && cd /tmp/terminus
-        curl -L "https://github.com/pantheon-systems/terminus/releases/download/${{ inputs.terminus_version }}/terminus.phar" --output terminus
+        curl -L "https://github.com/pantheon-systems/terminus/releases/download/3.5.2/terminus.phar" --output terminus
         chmod +x terminus
         sudo mv terminus /usr/local/bin/terminus
+    
     - name: Authenticate with Terminus
       shell: bash
       run: terminus auth:login --machine-token=${{ inputs.pantheon_machine_token }}
-    - name: Pantheon Promote Code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}
+    
+    - name: Pantheon Deploy Code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}
       shell: bash
       run: |
         echo "Promoting code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
 
-        if [[ "$(echo ${GITHUB_HEAD_REF})" == "multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
-          multidev:merge-to-dev ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_from }}
+        if [[ "$(echo ${GITHUB_HEAD_REF})" == "feature/multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
+          multidev:merge-to-dev ${{ inputs.pantheon_site_slug }}.${{ steps.pantheon-env.outputs.pantheon_env_from }}
         else
-          terminus env:deploy ${{ inputs.pantheon_site }}.${{ steps.pantheon-env.outputs.pantheon_env_to }} --note="$(git log -1 --pretty=%B)"
+          terminus env:deploy ${{ inputs.pantheon_site_slug }}.${{ steps.pantheon-env.outputs.pantheon_env_to }} --note="$(git log -1 --pretty=%B)"
         fi
