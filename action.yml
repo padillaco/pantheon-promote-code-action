@@ -49,7 +49,7 @@ runs:
       run: |
         echo "Promoting code from ${GITHUB_HEAD_REF} ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
 
-        if [[ "$(echo ${GITHUB_HEAD_REF})" == "feature/multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
+        if [[ "$(echo ${GITHUB_HEAD_REF})" == feature/multidev/* && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
           echo "option1"
           terminus multidev:merge-to-dev ${{ inputs.pantheon_site_slug }}.${{ steps.pantheon-env.outputs.pantheon_env_from }}
         else
