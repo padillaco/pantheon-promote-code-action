@@ -47,7 +47,7 @@ runs:
     - name: Pantheon Deploy Code from ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}
       shell: bash
       run: |
-        echo "Promoting code from ${{ GITHUB_HEAD_REF }} ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
+        echo "Promoting code from ${GITHUB_HEAD_REF} ${{ steps.pantheon-env.outputs.pantheon_env_from }} to ${{ steps.pantheon-env.outputs.pantheon_env_to }}."
 
         if [[ "$(echo ${GITHUB_HEAD_REF})" == "feature/multidev/*" && "$(echo ${steps.pantheon-env.outputs.pantheon_env_to})" == "dev" ]]; then
           echo "option1"
